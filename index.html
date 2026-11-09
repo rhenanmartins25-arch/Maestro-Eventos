@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GestãoEventos — Sistema de Produção de Eventos</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <h1>🎪 GestãoEventos</h1>
+      <span>Sistema Operacional v1.0</span>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Principal</div>
+      <div class="nav-item active" onclick="go('dashboard')"><span class="ico">📊</span> Dashboard</div>
+      <div class="nav-item" onclick="go('kanban')"><span class="ico">🗂️</span> Kanban</div>
+      <div class="nav-item" onclick="go('ordens')"><span class="ico">📋</span> Ordens de Serviço</div>
+      <div class="nav-section">Operações</div>
+      <div class="nav-item" onclick="go('compras')"><span class="ico">🛒</span> Compras / OC</div>
+      <div class="nav-item" onclick="go('fornecedores')"><span class="ico">🏢</span> Fornecedores</div>
+      <div class="nav-section">Configuração</div>
+      <div class="nav-item" onclick="go('licitacoes')"><span class="ico">📜</span> Licitações</div>
+    </nav>
+    <div class="user-box">
+      <div class="user-pill">
+        <div class="user-avatar">AD</div>
+        <div class="user-info">
+          <div class="user-name">Ana Dias</div>
+          <div class="user-role">ADM / Financeiro</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openNovaOS()">＋ Nova OS</button>
+        <button class="btn btn-primary btn-sm" onclick="showToast('🔔 Sem notificações novas')">🔔</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="screen active" id="screen-dashboard">
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-label"><span class="stat-dot" style="background:var(--warning)"></span>Em Cotação</div>
+            <div class="stat-value" id="stat-cotacao">0</div>
+            <div class="stat-sub">ordens abertas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><span class="stat-dot" style="background:var(--accent)"></span>Em Execução</div>
+            <div class="stat-value" id="stat-exec">0</div>
+            <div class="stat-sub">eventos em andamento</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><span class="stat-dot" style="background:#a78bfa"></span>Aguardando Aprovação</div>
+            <div class="stat-value" id="stat-aguard">0</div>
+            <div class="stat-sub">pendente do cliente</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><span class="stat-dot" style="background:var(--success)"></span>Concluídos no Mês</div>
+            <div class="stat-value" id="stat-conc">0</div>
+            <div class="stat-sub" id="stat-faturado">R$ 0 faturados</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div class="table-wrap">
+            <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600">📋 Últimas OS</div>
+            <table><thead><tr><th>Nº</th><th>Evento</th><th>Status</th></tr></thead>
+            <tbody id="dash-os-list"></tbody></table>
+          </div>
+          <div class="table-wrap">
+            <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600">🛒 Ordens de Compra Recentes</div>
+            <table><thead><tr><th>Fornecedor</th><th>Categoria</th><th>Valor</th></tr></thead>
+            <tbody id="dash-oc-list"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- KANBAN -->
+      <div class="screen" id="screen-kanban">
+        <div class="kanban" id="kanban-board"></div>
+      </div>
+
+      <!-- ORDENS -->
+      <div class="screen" id="screen-ordens">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nº OS</th><th>Evento</th><th>Data</th><th>Cliente</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="os-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- COMPRAS -->
+      <div class="screen" id="screen-compras">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+          <button class="btn btn-primary btn-sm" onclick="openNovaOC()">＋ Nova Ordem de Compra</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>OS</th><th>Fornecedor</th><th>Categoria</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="oc-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- FORNECEDORES -->
+      <div class="screen" id="screen-fornecedores">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+          <button class="btn btn-primary btn-sm" onclick="openNovoForn()">＋ Novo Fornecedor</button>
+        </div>
+        <div class="forn-grid" id="forn-grid"></div>
+      </div>
+
+      <!-- LICITAÇÕES -->
+      <div class="screen" id="screen-licitacoes">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+          <button class="btn btn-primary btn-sm" onclick="showToast('📌 Módulo em desenvolvimento')">＋ Nova Licitação</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nº Ata</th><th>Órgão</th><th>Objeto</th><th>Valor Global</th><th>Vigência</th><th>Status</th></tr></thead>
+            <tbody id="lic-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAIS ── -->
+
+<!-- Nova OS -->
+<div class="modal-bg" id="modal-os">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📋 Nova Ordem de Serviço</span>
+      <button class="modal-close" onclick="closeModal('modal-os')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Título do Evento *</label>
+        <input id="f-titulo" type="text" placeholder="Ex: Seminário de Gestão Pública 2024">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Data do Evento *</label>
+          <input id="f-data" type="date">
+        </div>
+        <div class="form-group">
+          <label>Contrato Licitatório *</label>
+          <select id="f-contrato">
+            <option value="">Selecione...</option>
+            <option value="ATA-2024-001">ATA-2024-001 — Prefeitura Municipal</option>
+            <option value="ATA-2024-003">ATA-2024-003 — Governo do Estado</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Local do Evento</label>
+        <input id="f-local" type="text" placeholder="Ex: Centro de Convenções — Sala A">
+      </div>
+      <div class="form-group">
+        <label>Cliente / Órgão Solicitante</label>
+        <input id="f-cliente" type="text" placeholder="Ex: Secretaria de Educação">
+      </div>
+      <div class="form-group">
+        <label>Descrição / Observações</label>
+        <textarea id="f-desc" placeholder="Detalhes adicionais sobre o evento..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-os')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarOS()">Criar OS</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detalhe OS -->
+<div class="modal-bg" id="modal-os-detail">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <span class="modal-title" id="detail-title"></span>
+      <button class="modal-close" onclick="closeModal('modal-os-detail')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="progress-steps" id="detail-progress"></div>
+      <div class="detail-grid" style="margin-bottom:16px">
+        <div class="detail-card">
+          <h3>Informações Gerais</h3>
+          <div id="detail-info"></div>
+        </div>
+        <div class="detail-card">
+          <h3>Histórico / Auditoria</h3>
+          <div class="timeline" id="detail-timeline"></div>
+        </div>
+      </div>
+      <div class="detail-card">
+        <h3>Ordens de Compra Vinculadas</h3>
+        <table style="width:100%">
+          <thead><tr><th>Categoria</th><th>Fornecedor</th><th>Valor</th><th>Status</th></tr></thead>
+          <tbody id="detail-oc"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer" id="detail-actions"></div>
+  </div>
+</div>
+
+<!-- Nova OC -->
+<div class="modal-bg" id="modal-oc">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🛒 Nova Ordem de Compra</span>
+      <button class="modal-close" onclick="closeModal('modal-oc')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>OS Vinculada *</label>
+        <select id="oc-os-id"></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Categoria *</label>
+          <select id="oc-cat">
+            <option value="ALIMENTACAO">🍽️ Alimentação</option>
+            <option value="AUDIOVISUAL">🎙️ Audiovisual</option>
+            <option value="MOBILIARIO">🪑 Mobiliário</option>
+            <option value="RH">👥 RH / Equipe</option>
+            <option value="TRANSPORTE">🚛 Transporte</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fornecedor *</label>
+          <select id="oc-forn"></select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Descrição do Serviço *</label>
+        <textarea id="oc-desc" placeholder="Descreva o que está sendo contratado..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Valor Negociado (R$) *</label>
+        <input id="oc-valor" type="number" placeholder="0.00" step="0.01">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-oc')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarOC()">Criar OC</button>
+    </div>
+  </div>
+</div>
+
+<!-- Novo Fornecedor -->
+<div class="modal-bg" id="modal-forn">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🏢 Novo Fornecedor</span>
+      <button class="modal-close" onclick="closeModal('modal-forn')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Razão Social *</label>
+        <input id="fn-razao" type="text" placeholder="Nome da empresa">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>CNPJ *</label>
+          <input id="fn-cnpj" type="text" placeholder="00.000.000/0001-00">
+        </div>
+        <div class="form-group">
+          <label>Categoria *</label>
+          <select id="fn-cat">
+            <option value="ALIMENTACAO">🍽️ Alimentação</option>
+            <option value="AUDIOVISUAL">🎙️ Audiovisual</option>
+            <option value="MOBILIARIO">🪑 Mobiliário</option>
+            <option value="RH">👥 RH</option>
+            <option value="TRANSPORTE">🚛 Transporte</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Contato</label>
+          <input id="fn-contato" type="text" placeholder="Nome do responsável">
+        </div>
+        <div class="form-group">
+          <label>E-mail</label>
+          <input id="fn-email" type="email" placeholder="contato@empresa.com">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-forn')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarForn()">Cadastrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span id="toast-msg">Operação realizada com sucesso!</span>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
