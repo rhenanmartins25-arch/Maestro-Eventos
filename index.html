@@ -3,8 +3,513 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GestãoEventos — Sistema de Produção de Eventos</title>
-<link rel="stylesheet" href="style.css">
+<title>Maestro Eventos – Sistema de Produção</title>
+<style>
+/* ══════════════════════════════════════════
+   GestãoEventos — Design System
+══════════════════════════════════════════ */
+
+:root {
+  --bg:       #0f1117;
+  --surface:  #1a1d27;
+  --surface2: #22263a;
+  --border:   #2e3350;
+  --accent:   #6366f1;
+  --accent2:  #8b5cf6;
+  --success:  #10b981;
+  --warning:  #f59e0b;
+  --danger:   #ef4444;
+  --info:     #3b82f6;
+  --text:     #e2e8f0;
+  --muted:    #64748b;
+  --radius:   10px;
+}
+
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── LAYOUT ── */
+.layout { display: flex; height: 100vh; overflow: hidden; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 230px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.logo {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.logo h1 { font-size: 15px; font-weight: 700; color: var(--text); }
+.logo span { font-size: 11px; color: var(--muted); }
+
+.nav { padding: 12px 8px; flex: 1; overflow-y: auto; }
+.nav-section {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  color: var(--muted);
+  padding: 12px 12px 4px;
+  text-transform: uppercase;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--muted);
+  transition: background .15s, color .15s;
+  margin-bottom: 2px;
+  user-select: none;
+}
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: rgba(99,102,241,.15); color: var(--accent); font-weight: 500; }
+.nav-item .ico { font-size: 16px; width: 20px; text-align: center; }
+
+.user-box { padding: 12px; border-top: 1px solid var(--border); }
+.user-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--surface2);
+}
+.user-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+.user-info { flex: 1; overflow: hidden; }
+.user-name { font-size: 12px; font-weight: 600; color: var(--text); }
+.user-role { font-size: 10px; color: var(--muted); }
+
+/* ── MAIN ── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar {
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  flex-shrink: 0;
+}
+.topbar-title { font-size: 16px; font-weight: 600; }
+.topbar-actions { display: flex; gap: 8px; }
+
+.content { flex: 1; overflow-y: auto; padding: 24px; }
+
+/* ── SCREENS ── */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all .15s;
+  font-family: inherit;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #4f46e5; }
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { background: var(--surface2); color: var(--text); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #059669; }
+
+/* ── STAT CARDS ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+.stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 8px;
+}
+.stat-value { font-size: 28px; font-weight: 700; color: var(--text); }
+.stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.stat-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+/* ── TABLE ── */
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+table { width: 100%; border-collapse: collapse; }
+th {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+td {
+  padding: 12px 16px;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(46,51,80,.5);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,.02); }
+.link { color: var(--accent); cursor: pointer; text-decoration: underline; font-weight: 500; }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge-em_cotacao        { background: rgba(245,158,11,.12); color: var(--warning); }
+.badge-pronto            { background: rgba(59,130,246,.12);  color: var(--info); }
+.badge-em_execucao       { background: rgba(99,102,241,.12);  color: var(--accent); }
+.badge-aguardando        { background: rgba(139,92,246,.12);  color: #a78bfa; }
+.badge-aprovado          { background: rgba(16,185,129,.12);  color: var(--success); }
+.badge-nf                { background: rgba(16,185,129,.12);  color: #34d399; }
+.badge-concluido         { background: rgba(100,116,139,.12); color: var(--muted); }
+
+/* ── KANBAN ── */
+.kanban {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  align-items: flex-start;
+}
+.kanban-col {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-width: 240px;
+  max-width: 240px;
+  display: flex;
+  flex-direction: column;
+}
+.kanban-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.kanban-title { font-size: 12px; font-weight: 600; }
+.kanban-badge {
+  background: var(--surface2);
+  color: var(--muted);
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.kanban-cards {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 60px;
+}
+.kcard {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: border-color .15s, transform .15s;
+}
+.kcard:hover { border-color: var(--accent); transform: translateY(-1px); }
+.kcard-os { font-size: 10px; color: var(--accent); font-weight: 600; }
+.kcard-title { font-size: 12px; font-weight: 500; color: var(--text); margin: 4px 0; }
+.kcard-meta { font-size: 11px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
+.kcard-tag {
+  background: rgba(99,102,241,.12);
+  color: var(--accent);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 500;
+}
+.kanban-empty { color: var(--muted); font-size: 12px; text-align: center; padding: 16px; }
+
+/* ── MODAL ── */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.7);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s;
+}
+.modal-bg.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+.modal-title { font-size: 16px; font-weight: 600; }
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  line-height: 1;
+}
+.modal-close:hover { background: var(--surface2); color: var(--text); }
+.modal-body { padding: 20px 24px; }
+.modal-footer {
+  padding: 14px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
+}
+
+/* ── FORMS ── */
+.form-group { margin-bottom: 16px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+input, select, textarea {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text);
+  padding: 9px 12px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color .15s;
+  font-family: inherit;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+textarea { resize: vertical; min-height: 80px; }
+select option { background: var(--surface2); }
+
+/* ── PROGRESS STEPS ── */
+.progress-steps {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+.pstep { flex: 1; text-align: center; position: relative; }
+.pstep-circle {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  margin: 0 auto 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  border: 2px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted);
+}
+.pstep-circle.done  { background: var(--success); border-color: var(--success); color: #fff; }
+.pstep-circle.active{ background: var(--accent);  border-color: var(--accent);  color: #fff; }
+.pstep-label { font-size: 10px; color: var(--muted); font-weight: 500; line-height: 1.3; }
+.pstep::after {
+  content: '';
+  position: absolute;
+  top: 13px;
+  left: calc(50% + 14px);
+  width: calc(100% - 28px);
+  height: 2px;
+  background: var(--border);
+}
+.pstep:last-child::after { display: none; }
+.pstep.done::after { background: var(--success); }
+
+/* ── DETAIL CARDS ── */
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.detail-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.detail-card h3 {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 12px;
+}
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.detail-row:last-child { margin-bottom: 0; }
+.detail-key { color: var(--muted); }
+.detail-val { font-weight: 500; color: var(--text); text-align: right; max-width: 60%; }
+
+/* ── TIMELINE ── */
+.timeline { padding: 4px 0; }
+.tline-item { display: flex; gap: 12px; margin-bottom: 16px; }
+.tline-item:last-child { margin-bottom: 0; }
+.tline-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.tline-dot.done    { background: var(--success); }
+.tline-dot.active  { background: var(--accent); }
+.tline-dot.pending { background: var(--border); }
+.tline-label { font-size: 12px; font-weight: 500; }
+.tline-meta  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ── FORNECEDORES GRID ── */
+.forn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.forn-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.forn-name { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.forn-info { font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+
+/* ── CATEGORY PILLS ── */
+.cat-pill {
+  display: inline-block;
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.cat-ALIMENTACAO { background: rgba(239,68,68,.12);  color: #f87171; }
+.cat-AUDIOVISUAL  { background: rgba(99,102,241,.12); color: #818cf8; }
+.cat-MOBILIARIO   { background: rgba(245,158,11,.12); color: #fbbf24; }
+.cat-RH           { background: rgba(16,185,129,.12); color: #34d399; }
+.cat-TRANSPORTE   { background: rgba(59,130,246,.12); color: #60a5fa; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface);
+  border: 1px solid var(--success);
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  z-index: 999;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: transform .3s, opacity .3s;
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  max-width: 320px;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1024px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .forn-grid  { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 <body>
 
@@ -313,8 +818,642 @@
 <div class="toast" id="toast">
   <span id="toast-msg">Operação realizada com sucesso!</span>
 </div>
+<script>
+/**
+ * data.js — Estado inicial da aplicação (mock data)
+ * Em produção, substituir por chamadas à API REST (FastAPI backend).
+ */
 
-<script src="data.js"></script>
-<script src="app.js"></script>
+const STATUS_LABELS = {
+  EM_COTACAO:              'Em Cotação',
+  PRONTO_PARA_EXECUCAO:    'Pronto p/ Execução',
+  EM_EXECUCAO:             'Em Execução',
+  AGUARDANDO_APROVACAO:    'Aguard. Aprovação',
+  APROVADO_CLIENTE:        'Aprovado',
+  NF_EMITIDA:              'NF Emitida',
+  CONCLUIDO:               'Concluído',
+};
+
+const STATUS_FLOW = [
+  'EM_COTACAO',
+  'PRONTO_PARA_EXECUCAO',
+  'EM_EXECUCAO',
+  'AGUARDANDO_APROVACAO',
+  'APROVADO_CLIENTE',
+  'NF_EMITIDA',
+  'CONCLUIDO',
+];
+
+const NEXT_STATUS = {
+  EM_COTACAO:           'PRONTO_PARA_EXECUCAO',
+  PRONTO_PARA_EXECUCAO: 'EM_EXECUCAO',
+  EM_EXECUCAO:          'AGUARDANDO_APROVACAO',
+  AGUARDANDO_APROVACAO: 'APROVADO_CLIENTE',
+  APROVADO_CLIENTE:     'NF_EMITIDA',
+  NF_EMITIDA:           'CONCLUIDO',
+};
+
+const NEXT_BTN_LABEL = {
+  EM_COTACAO:           'Enviar para Execução →',
+  PRONTO_PARA_EXECUCAO: 'Iniciar Execução →',
+  EM_EXECUCAO:          'Aguardar Aprovação →',
+  AGUARDANDO_APROVACAO: 'Marcar como Aprovado →',
+  APROVADO_CLIENTE:     'Emitir NF →',
+  NF_EMITIDA:           'Confirmar Pagamento ✓',
+};
+
+/** Estado reativo da aplicação */
+const state = {
+  ordens: [
+    {
+      id: 1,
+      numero: 'OS-2024-00001',
+      titulo: 'Seminário de Inovação Municipal',
+      data: '2024-11-15',
+      cliente: 'Secretaria de Educação',
+      local: 'Centro de Convenções',
+      status: 'EM_EXECUCAO',
+      contrato: 'ATA-2024-001',
+      logs: [
+        { acao: 'OS criada', user: 'Ana Dias', dt: '01/11 09:00' },
+        { acao: 'Status → Em Cotação', user: 'Ana Dias', dt: '01/11 09:01' },
+        { acao: 'Status → Pronto p/ Execução', user: 'Carlos M.', dt: '05/11 14:30' },
+        { acao: 'Status → Em Execução', user: 'Produtor', dt: '15/11 08:00' },
+      ],
+    },
+    {
+      id: 2,
+      numero: 'OS-2024-00002',
+      titulo: 'Conferência de Sustentabilidade',
+      data: '2024-11-20',
+      cliente: 'Governo Estadual',
+      local: 'Palácio das Convenções',
+      status: 'AGUARDANDO_APROVACAO',
+      contrato: 'ATA-2024-003',
+      logs: [
+        { acao: 'OS criada', user: 'Ana Dias', dt: '03/11 10:15' },
+        { acao: 'Status → Em Cotação', user: 'Ana Dias', dt: '03/11 10:16' },
+        { acao: 'Status → Pronto p/ Execução', user: 'Carlos M.', dt: '06/11 11:00' },
+        { acao: 'Evento realizado com sucesso', user: 'Produtor', dt: '20/11 18:00' },
+      ],
+    },
+    {
+      id: 3,
+      numero: 'OS-2024-00003',
+      titulo: 'Workshop de Capacitação RH',
+      data: '2024-12-05',
+      cliente: 'Secretaria de Administração',
+      local: 'Auditório Central',
+      status: 'EM_COTACAO',
+      contrato: 'ATA-2024-001',
+      logs: [
+        { acao: 'OS criada', user: 'Ana Dias', dt: '08/11 15:00' },
+      ],
+    },
+    {
+      id: 4,
+      numero: 'OS-2024-00004',
+      titulo: 'Encontro de Gestores Públicos',
+      data: '2024-12-10',
+      cliente: 'Prefeitura Municipal',
+      local: 'Hotel Plaza',
+      status: 'PRONTO_PARA_EXECUCAO',
+      contrato: 'ATA-2024-001',
+      logs: [
+        { acao: 'OS criada', user: 'Ana Dias', dt: '07/11 09:30' },
+        { acao: 'OCs geradas', user: 'Carlos M.', dt: '08/11 16:00' },
+      ],
+    },
+    {
+      id: 5,
+      numero: 'OS-2024-00005',
+      titulo: 'Cerimônia de Premiação 2024',
+      data: '2024-11-28',
+      cliente: 'Câmara Municipal',
+      local: 'Teatro Municipal',
+      status: 'APROVADO_CLIENTE',
+      contrato: 'ATA-2024-003',
+      logs: [
+        { acao: 'OS criada', user: 'Ana Dias', dt: '01/11 08:00' },
+        { acao: 'Aprovado pelo cliente', user: 'Cliente', dt: '22/11 10:00' },
+      ],
+    },
+  ],
+
+  ordens_compra: [
+    { id: 1, os_id: 1, fornecedor: 'Buffet Sabor & Arte', categoria: 'ALIMENTACAO', descricao: 'Coffee break para 200 pessoas', valor: 4800, status: 'CONFIRMADA' },
+    { id: 2, os_id: 1, fornecedor: 'SomPro AV',           categoria: 'AUDIOVISUAL',  descricao: 'Sonorização e projeção', valor: 12000, status: 'CONFIRMADA' },
+    { id: 3, os_id: 1, fornecedor: 'MobEvent Locações',   categoria: 'MOBILIARIO',   descricao: 'Mesas e cadeiras para 200 pax', valor: 3200, status: 'CONFIRMADA' },
+    { id: 4, os_id: 2, fornecedor: 'RH Total Eventos',    categoria: 'RH',           descricao: '4 recepcionistas + 2 segurança', valor: 2800, status: 'CONFIRMADA' },
+    { id: 5, os_id: 4, fornecedor: 'Buffet Sabor & Arte', categoria: 'ALIMENTACAO',  descricao: 'Almoço executivo 80 pessoas', valor: 6400, status: 'PENDENTE' },
+    { id: 6, os_id: 4, fornecedor: 'TransLog Eventos',    categoria: 'TRANSPORTE',   descricao: 'Transfer executivos', valor: 1800, status: 'PENDENTE' },
+  ],
+
+  fornecedores: [
+    { id: 1, razao: 'Buffet Sabor & Arte',  cnpj: '12.345.678/0001-90', categoria: 'ALIMENTACAO', contato: 'Maria Souza',   email: 'contato@buffetsabor.com' },
+    { id: 2, razao: 'SomPro AV',            cnpj: '23.456.789/0001-01', categoria: 'AUDIOVISUAL',  contato: 'João Lima',     email: 'joao@sompro.com.br' },
+    { id: 3, razao: 'MobEvent Locações',    cnpj: '34.567.890/0001-12', categoria: 'MOBILIARIO',   contato: 'Sandra Costa',  email: 'sandra@mobevent.com' },
+    { id: 4, razao: 'RH Total Eventos',     cnpj: '45.678.901/0001-23', categoria: 'RH',           contato: 'Pedro Alves',   email: 'pedro@rhtotal.com' },
+    { id: 5, razao: 'TransLog Eventos',     cnpj: '56.789.012/0001-34', categoria: 'TRANSPORTE',   contato: 'Roberto Nunes', email: 'roberto@translog.com' },
+    { id: 6, razao: 'Light & Sound Pro',    cnpj: '67.890.123/0001-45', categoria: 'AUDIOVISUAL',  contato: 'Fernanda Tech',  email: 'fernanda@lsp.com' },
+  ],
+
+  licitacoes: [
+    {
+      id: 1,
+      ata: 'ATA-2024-001',
+      orgao: 'Prefeitura Municipal de São Paulo',
+      objeto: 'Serviços de organização de eventos e suporte logístico',
+      valor: 'R$ 1.200.000,00',
+      inicio: '01/01/2024',
+      fim: '31/12/2024',
+      status: 'ATIVO',
+    },
+    {
+      id: 2,
+      ata: 'ATA-2024-003',
+      orgao: 'Governo do Estado de São Paulo',
+      objeto: 'Produção de eventos institucionais e corporativos',
+      valor: 'R$ 3.500.000,00',
+      inicio: '01/03/2024',
+      fim: '28/02/2025',
+      status: 'ATIVO',
+    },
+  ],
+};
+
+// Contadores para IDs autoincrementais
+let _nextOSId   = state.ordens.length + 1;
+let _nextOCId   = state.ordens_compra.length + 1;
+let _nextFornId = state.fornecedores.length + 1;
+
+function nextOSId()   { return ++_nextOSId; }
+function nextOCId()   { return ++_nextOCId; }
+function nextFornId() { return ++_nextFornId; }
+/**
+ * app.js — Lógica principal da aplicação
+ * GestãoEventos — Protótipo Frontend
+ */
+
+'use strict';
+
+// ══════════════════════════════════════════
+//  NAVEGAÇÃO
+// ══════════════════════════════════════════
+
+const PAGE_TITLES = {
+  dashboard:    'Dashboard',
+  kanban:       'Visão Kanban',
+  ordens:       'Ordens de Serviço',
+  compras:      'Compras & Ordens de Compra',
+  fornecedores: 'Fornecedores Homologados',
+  licitacoes:   'Contratos Licitatórios',
+};
+
+function go(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  document.getElementById('screen-' + screen).classList.add('active');
+  document.getElementById('page-title').textContent = PAGE_TITLES[screen] || screen;
+
+  // Marca item ativo no sidebar
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick')?.includes(`'${screen}'`)) n.classList.add('active');
+  });
+
+  render(screen);
+}
+
+// ══════════════════════════════════════════
+//  RENDER DISPATCHER
+// ══════════════════════════════════════════
+
+function render(screen) {
+  const map = {
+    dashboard:    renderDashboard,
+    kanban:       renderKanban,
+    ordens:       renderOrdens,
+    compras:      renderCompras,
+    fornecedores: renderFornecedores,
+    licitacoes:   renderLicitacoes,
+  };
+  map[screen]?.();
+}
+
+// ══════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════
+
+function statusBadge(s) {
+  const cls = {
+    EM_COTACAO:           'badge-em_cotacao',
+    PRONTO_PARA_EXECUCAO: 'badge-pronto',
+    EM_EXECUCAO:          'badge-em_execucao',
+    AGUARDANDO_APROVACAO: 'badge-aguardando',
+    APROVADO_CLIENTE:     'badge-aprovado',
+    NF_EMITIDA:           'badge-nf',
+    CONCLUIDO:            'badge-concluido',
+  };
+  return `<span class="badge ${cls[s] || ''}">${STATUS_LABELS[s] || s}</span>`;
+}
+
+function ocStatusColor(s) {
+  if (s === 'CONFIRMADA') return 'var(--success)';
+  if (s === 'CANCELADA')  return 'var(--danger)';
+  return 'var(--warning)';
+}
+
+function brMoney(v) {
+  return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+}
+
+function fmtDate(isoDate) {
+  if (!isoDate) return '—';
+  return new Date(isoDate + 'T00:00:00').toLocaleDateString('pt-BR');
+}
+
+function nowDt() {
+  return new Date().toLocaleString('pt-BR', {
+    day: '2-digit', month: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+// ══════════════════════════════════════════
+//  RENDER: DASHBOARD
+// ══════════════════════════════════════════
+
+function renderDashboard() {
+  const counts = {};
+  STATUS_FLOW.forEach(s => { counts[s] = state.ordens.filter(o => o.status === s).length; });
+
+  document.getElementById('stat-cotacao').textContent = counts.EM_COTACAO || 0;
+  document.getElementById('stat-exec').textContent    = counts.EM_EXECUCAO || 0;
+  document.getElementById('stat-aguard').textContent  = counts.AGUARDANDO_APROVACAO || 0;
+  document.getElementById('stat-conc').textContent    = counts.CONCLUIDO || 0;
+
+  const totalFaturado = state.ordens_compra
+    .filter(oc => oc.status === 'CONFIRMADA')
+    .reduce((acc, oc) => acc + oc.valor, 0);
+  document.getElementById('stat-faturado').textContent = brMoney(totalFaturado) + ' em OCs confirmadas';
+
+  // Últimas OS
+  const osTbody = document.getElementById('dash-os-list');
+  osTbody.innerHTML = [...state.ordens].reverse().slice(0, 5).map(o => `
+    <tr>
+      <td><span class="link" onclick="openDetail(${o.id})">${o.numero}</span></td>
+      <td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.titulo}</td>
+      <td>${statusBadge(o.status)}</td>
+    </tr>`).join('');
+
+  // OCs recentes
+  const ocTbody = document.getElementById('dash-oc-list');
+  ocTbody.innerHTML = [...state.ordens_compra].reverse().slice(0, 5).map(oc => `
+    <tr>
+      <td style="font-size:12px">${oc.fornecedor}</td>
+      <td><span class="cat-pill cat-${oc.categoria}" style="margin-bottom:0">${oc.categoria}</span></td>
+      <td style="font-weight:600">${brMoney(oc.valor)}</td>
+    </tr>`).join('');
+}
+
+// ══════════════════════════════════════════
+//  RENDER: KANBAN
+// ══════════════════════════════════════════
+
+function renderKanban() {
+  const board = document.getElementById('kanban-board');
+  board.innerHTML = '';
+
+  STATUS_FLOW.forEach(status => {
+    const cards = state.ordens.filter(o => o.status === status);
+    const col   = document.createElement('div');
+    col.className = 'kanban-col';
+    col.innerHTML = `
+      <div class="kanban-header">
+        <span class="kanban-title">${STATUS_LABELS[status]}</span>
+        <span class="kanban-badge">${cards.length}</span>
+      </div>
+      <div class="kanban-cards">
+        ${cards.length === 0
+          ? '<div class="kanban-empty">Vazio</div>'
+          : cards.map(o => `
+              <div class="kcard" onclick="openDetail(${o.id})">
+                <div class="kcard-os">${o.numero}</div>
+                <div class="kcard-title">${o.titulo}</div>
+                <div class="kcard-meta">
+                  <span>📅 ${fmtDate(o.data)}</span>
+                  <span class="kcard-tag">${o.cliente}</span>
+                </div>
+              </div>`).join('')}
+      </div>`;
+    board.appendChild(col);
+  });
+}
+
+// ══════════════════════════════════════════
+//  RENDER: ORDENS DE SERVIÇO
+// ══════════════════════════════════════════
+
+function renderOrdens() {
+  const tbody = document.getElementById('os-table-body');
+  tbody.innerHTML = state.ordens.map(o => `
+    <tr>
+      <td><span class="link" onclick="openDetail(${o.id})">${o.numero}</span></td>
+      <td>${o.titulo}</td>
+      <td>${fmtDate(o.data)}</td>
+      <td style="font-size:12px">${o.cliente}</td>
+      <td>${statusBadge(o.status)}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openDetail(${o.id})">Ver detalhes</button></td>
+    </tr>`).join('');
+}
+
+// ══════════════════════════════════════════
+//  RENDER: COMPRAS / OC
+// ══════════════════════════════════════════
+
+function renderCompras() {
+  const tbody = document.getElementById('oc-table-body');
+  tbody.innerHTML = state.ordens_compra.map(oc => {
+    const os = state.ordens.find(o => o.id === oc.os_id);
+    return `
+      <tr>
+        <td style="font-size:12px">${os?.numero || '—'}</td>
+        <td>${oc.fornecedor}</td>
+        <td><span class="cat-pill cat-${oc.categoria}" style="margin-bottom:0">${oc.categoria}</span></td>
+        <td style="font-weight:600">${brMoney(oc.valor)}</td>
+        <td style="color:${ocStatusColor(oc.status)};font-weight:600;font-size:12px">${oc.status}</td>
+        <td>
+          ${oc.status === 'PENDENTE'
+            ? `<button class="btn btn-success btn-sm" onclick="confirmarOC(${oc.id})">Confirmar</button>`
+            : '<span style="color:var(--muted);font-size:12px">—</span>'}
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+//  RENDER: FORNECEDORES
+// ══════════════════════════════════════════
+
+function renderFornecedores() {
+  const grid = document.getElementById('forn-grid');
+  grid.innerHTML = state.fornecedores.map(f => `
+    <div class="forn-card">
+      <span class="cat-pill cat-${f.categoria}">${f.categoria}</span>
+      <div class="forn-name">${f.razao}</div>
+      <div class="forn-info">📄 ${f.cnpj}</div>
+      <div class="forn-info">👤 ${f.contato || '—'}</div>
+      <div class="forn-info">✉️ ${f.email || '—'}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+//  RENDER: LICITAÇÕES
+// ══════════════════════════════════════════
+
+function renderLicitacoes() {
+  const tbody = document.getElementById('lic-table-body');
+  tbody.innerHTML = state.licitacoes.map(l => `
+    <tr>
+      <td style="font-weight:600;color:var(--accent)">${l.ata}</td>
+      <td style="font-size:12px">${l.orgao}</td>
+      <td style="font-size:12px">${l.objeto}</td>
+      <td style="font-weight:600">${l.valor}</td>
+      <td style="font-size:12px">${l.inicio} – ${l.fim}</td>
+      <td><span class="badge badge-aprovado">${l.status}</span></td>
+    </tr>`).join('');
+}
+
+// ══════════════════════════════════════════
+//  MODAIS
+// ══════════════════════════════════════════
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Fecha modal ao clicar no fundo
+document.querySelectorAll('.modal-bg').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// Fecha modal com ESC
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-bg.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+// ── Nova OS ──
+function openNovaOS() { openModal('modal-os'); }
+
+function salvarOS() {
+  const titulo   = document.getElementById('f-titulo').value.trim();
+  const data     = document.getElementById('f-data').value;
+  const cliente  = document.getElementById('f-cliente').value.trim() || 'Cliente';
+  const local    = document.getElementById('f-local').value.trim();
+  const contrato = document.getElementById('f-contrato').value;
+  const desc     = document.getElementById('f-desc').value.trim();
+
+  if (!titulo || !data) {
+    showToast('⚠️ Preencha título e data!', 'var(--warning)');
+    return;
+  }
+
+  const id = nextOSId();
+  const ano = new Date().getFullYear();
+  const os = {
+    id,
+    numero: `OS-${ano}-${String(id).padStart(5, '0')}`,
+    titulo, data, cliente, local, desc,
+    contrato: contrato || 'ATA-2024-001',
+    status: 'EM_COTACAO',
+    logs: [{ acao: 'OS criada', user: 'Ana Dias', dt: nowDt() }],
+  };
+
+  state.ordens.push(os);
+  closeModal('modal-os');
+  ['f-titulo', 'f-data', 'f-local', 'f-cliente', 'f-desc'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  showToast(`✅ ${os.numero} criada com sucesso!`);
+  renderDashboard();
+}
+
+// ── Detalhe OS ──
+function openDetail(id) {
+  const os = state.ordens.find(o => o.id === id);
+  if (!os) return;
+
+  document.getElementById('detail-title').textContent = `${os.numero} — ${os.titulo}`;
+
+  // Barra de progresso
+  const shortLabels = ['Cotação', 'Pronto', 'Execução', 'Aprovação', 'Aprovado', 'NF', 'Concluído'];
+  const ci = STATUS_FLOW.indexOf(os.status);
+  document.getElementById('detail-progress').innerHTML = STATUS_FLOW.map((s, i) => {
+    const cls  = i < ci ? 'done' : i === ci ? 'active' : '';
+    const icon = i < ci ? '✓' : String(i + 1);
+    return `
+      <div class="pstep ${cls}">
+        <div class="pstep-circle ${cls}">${icon}</div>
+        <div class="pstep-label">${shortLabels[i]}</div>
+      </div>`;
+  }).join('');
+
+  // Informações gerais
+  document.getElementById('detail-info').innerHTML = `
+    <div class="detail-row"><span class="detail-key">Cliente</span><span class="detail-val">${os.cliente}</span></div>
+    <div class="detail-row"><span class="detail-key">Data</span><span class="detail-val">${fmtDate(os.data)}</span></div>
+    <div class="detail-row"><span class="detail-key">Local</span><span class="detail-val">${os.local || '—'}</span></div>
+    <div class="detail-row"><span class="detail-key">Status</span><span class="detail-val">${statusBadge(os.status)}</span></div>
+    <div class="detail-row"><span class="detail-key">Contrato</span><span class="detail-val" style="font-size:11px">${os.contrato}</span></div>`;
+
+  // Timeline / Auditoria
+  document.getElementById('detail-timeline').innerHTML = os.logs.map((l, i) => `
+    <div class="tline-item">
+      <div class="tline-dot ${i < os.logs.length - 1 ? 'done' : 'active'}"></div>
+      <div class="tline-content">
+        <div class="tline-label">${l.acao}</div>
+        <div class="tline-meta">${l.user} · ${l.dt}</div>
+      </div>
+    </div>`).join('');
+
+  // OCs vinculadas
+  const ocs = state.ordens_compra.filter(oc => oc.os_id === id);
+  document.getElementById('detail-oc').innerHTML = ocs.length === 0
+    ? '<tr><td colspan="4" style="color:var(--muted);font-size:12px;padding:12px">Nenhuma OC vinculada</td></tr>'
+    : ocs.map(oc => `
+        <tr>
+          <td><span class="cat-pill cat-${oc.categoria}" style="margin-bottom:0;font-size:10px">${oc.categoria}</span></td>
+          <td style="font-size:12px">${oc.fornecedor}</td>
+          <td style="font-weight:600;font-size:13px">${brMoney(oc.valor)}</td>
+          <td style="color:${ocStatusColor(oc.status)};font-weight:600;font-size:12px">${oc.status}</td>
+        </tr>`).join('');
+
+  // Botões de ação
+  const foot = document.getElementById('detail-actions');
+  foot.innerHTML = `<button class="btn btn-ghost" onclick="closeModal('modal-os-detail')">Fechar</button>`;
+  if (NEXT_STATUS[os.status]) {
+    foot.innerHTML += `
+      <button class="btn btn-primary" onclick="avancarStatus(${os.id})">
+        ${NEXT_BTN_LABEL[os.status]}
+      </button>`;
+  }
+
+  openModal('modal-os-detail');
+}
+
+function avancarStatus(id) {
+  const os = state.ordens.find(o => o.id === id);
+  if (!os || !NEXT_STATUS[os.status]) return;
+
+  const novoStatus = NEXT_STATUS[os.status];
+  os.logs.push({ acao: `Status → ${STATUS_LABELS[novoStatus]}`, user: 'Ana Dias', dt: nowDt() });
+  os.status = novoStatus;
+
+  closeModal('modal-os-detail');
+  showToast(`✅ Status atualizado: ${STATUS_LABELS[novoStatus]}`);
+  renderDashboard();
+  renderKanban();
+  renderOrdens();
+}
+
+// ── Nova OC ──
+function openNovaOC() {
+  const selOS = document.getElementById('oc-os-id');
+  selOS.innerHTML = state.ordens.map(o =>
+    `<option value="${o.id}">${o.numero} — ${o.titulo.substring(0, 32)}</option>`
+  ).join('');
+
+  const selForn = document.getElementById('oc-forn');
+  selForn.innerHTML = state.fornecedores.map(f =>
+    `<option value="${f.id}">${f.razao}</option>`
+  ).join('');
+
+  openModal('modal-oc');
+}
+
+function salvarOC() {
+  const os_id    = parseInt(document.getElementById('oc-os-id').value);
+  const categoria = document.getElementById('oc-cat').value;
+  const fornId   = parseInt(document.getElementById('oc-forn').value);
+  const descricao = document.getElementById('oc-desc').value.trim();
+  const valor    = parseFloat(document.getElementById('oc-valor').value);
+
+  if (!descricao || isNaN(valor) || valor <= 0) {
+    showToast('⚠️ Preencha todos os campos!', 'var(--warning)');
+    return;
+  }
+
+  const forn = state.fornecedores.find(f => f.id === fornId);
+  state.ordens_compra.push({
+    id: nextOCId(),
+    os_id, fornecedor: forn.razao, categoria, descricao, valor,
+    status: 'PENDENTE',
+  });
+
+  closeModal('modal-oc');
+  document.getElementById('oc-desc').value  = '';
+  document.getElementById('oc-valor').value = '';
+  showToast('✅ Ordem de Compra criada!');
+  renderCompras();
+}
+
+function confirmarOC(id) {
+  const oc = state.ordens_compra.find(o => o.id === id);
+  if (oc) {
+    oc.status = 'CONFIRMADA';
+    showToast('✅ OC confirmada com sucesso!');
+    renderCompras();
+  }
+}
+
+// ── Novo Fornecedor ──
+function openNovoForn() { openModal('modal-forn'); }
+
+function salvarForn() {
+  const razao    = document.getElementById('fn-razao').value.trim();
+  const cnpj     = document.getElementById('fn-cnpj').value.trim();
+  const categoria = document.getElementById('fn-cat').value;
+  const contato  = document.getElementById('fn-contato').value.trim();
+  const email    = document.getElementById('fn-email').value.trim();
+
+  if (!razao || !cnpj) {
+    showToast('⚠️ Preencha razão social e CNPJ!', 'var(--warning)');
+    return;
+  }
+
+  state.fornecedores.push({ id: nextFornId(), razao, cnpj, categoria, contato, email });
+  closeModal('modal-forn');
+  ['fn-razao', 'fn-cnpj', 'fn-contato', 'fn-email'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  showToast('✅ Fornecedor cadastrado com sucesso!');
+  renderFornecedores();
+}
+
+// ══════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════
+
+let toastTimer = null;
+
+function showToast(msg, borderColor) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  toast.style.borderColor = borderColor || 'var(--success)';
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
+}
+
+// ══════════════════════════════════════════
+//  INICIALIZAÇÃO
+// ══════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderDashboard();
+});
+</script>
 </body>
 </html>
