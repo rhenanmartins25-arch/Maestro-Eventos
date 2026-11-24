@@ -854,6 +854,22 @@ function renderFornecedores(){
 // ══════════════════════════
 //  RENDER: LICITAÇÕES
 // ══════════════════════════
+function editarLicInfo(licId){
+  const lic=state.licitacoes.find(l=>l.id===licId);
+  if(!lic)return;
+  const novoOrgao=prompt('Órgão / Ministério contratante:',lic.orgao||'');
+  if(novoOrgao===null)return;
+  lic.orgao=novoOrgao.trim()||lic.orgao;
+  const novoObjeto=prompt('Objeto do contrato (descrição):',lic.objeto||'');
+  if(novoObjeto!==null)lic.objeto=novoObjeto.trim()||lic.objeto;
+  const inicio=prompt('Vigência início (AAAA-MM-DD):',lic.inicio||'');
+  if(inicio!==null)lic.inicio=inicio.trim();
+  const fim=prompt('Vigência fim (AAAA-MM-DD):',lic.fim||'');
+  if(fim!==null)lic.fim=fim.trim();
+  renderLicitacoes();
+  showToast('✅ Licitação atualizada!');
+}
+
 function renderLicitacoes(){
   document.getElementById('lic-container').innerHTML=state.licitacoes.map(l=>{
     const itensRows=(l.itens||[]).map(it=>{
@@ -870,8 +886,16 @@ function renderLicitacoes(){
     return`
       <div class="table-wrap" style="margin-bottom:20px">
         <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-          <div><span style="font-weight:700;color:var(--accent)">${l.ata}</span><span style="font-size:12px;color:var(--muted);margin-left:12px">${l.orgao}</span></div>
-          <div style="display:flex;align-items:center;gap:10px"><span style="font-size:11px;color:var(--muted)">${l.inicio} – ${l.fim}</span><span class="badge badge-aprovado">${l.status}</span></div>
+          <div>
+            <span style="font-weight:700;color:var(--accent)">${l.ata}</span>
+            <span style="font-size:12px;color:var(--muted);margin-left:12px">${l.orgao}</span>
+            ${l._catalogo?'<span style="font-size:10px;background:var(--accent);color:#fff;border-radius:4px;padding:1px 6px;margin-left:8px">📂 importado</span>':''}
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:11px;color:var(--muted)">${l.inicio?l.inicio+' – '+l.fim:''}</span>
+            <span class="badge badge-aprovado">${l.status}</span>
+            ${l._catalogo?`<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:3px 8px" onclick="editarLicInfo(${l.id})">✏️ Editar info</button>`:''}
+          </div>
         </div>
         <div style="padding:8px 16px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border)">${l.objeto}</div>
         <table><thead><tr><th>Categoria</th><th>Fornecedor</th><th>Valor de Ata</th><th>Valor do Item</th><th>% Lucro</th></tr></thead><tbody>${itensRows}</tbody></table>
@@ -1402,8 +1426,44 @@ function importarDoPlanilha(wb,nomeArquivo){
   if(itens.length===0){showToast('⚠️ Nenhum item encontrado. Verifique o formato da planilha.','var(--warning)');return;}
 
   state.catalogo_itens=itens;
+
+  // Auto-criar licitação a partir da planilha importada
+  const nomeBase=nomeArquivo.replace(/\.xlsx?$/i,'');
+  // Verificar se já existe uma licitação com esse nome para não duplicar
+  const jaExiste=state.licitacoes.find(l=>l.ata===nomeBase||l._fonte===nomeArquivo);
+  if(!jaExiste && itens.length>0){
+    // Montar itens da licitação a partir do catálogo
+    const licItens=itens.map(it=>({
+      categoria:it.categoria,
+      fornecedor:'A definir',
+      valor_ata:it.valor_unit,
+      valor_item:0,
+      num:it.num,
+      nome:it.nome,
+      unidade:it.unidade
+    }));
+    licItens.push({categoria:'FRETE',fornecedor:'—',valor_ata:0,valor_item:0});
+    licItens.push({categoria:'GASTOS_ADM',fornecedor:'—',valor_ata:0,valor_item:0});
+    const novaLic={
+      id:++_nextLicId,
+      ata:nomeBase,
+      orgao:'Ministério / Órgão Contratante',
+      objeto:'Importado automaticamente da planilha '+nomeArquivo,
+      inicio:'',
+      fim:'',
+      status:'ATIVO',
+      itens:licItens,
+      _fonte:nomeArquivo,
+      _catalogo:true
+    };
+    state.licitacoes.push(novaLic);
+    renderLicitacoes();
+    showToast(`✅ ${itens.length} itens importados e Licitação criada automaticamente!`);
+  } else {
+    showToast(`✅ ${itens.length} itens importados da planilha!`);
+  }
+
   renderCatalogo(nomeArquivo,secoes);
-  showToast(`✅ ${itens.length} itens importados da planilha!`);
 }
 
 function renderCatalogo(nomeArquivo,secoes){
