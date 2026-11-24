@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Maestro Eventos – Sistema de Produção</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2e3350;--accent:#6366f1;--accent2:#8b5cf6;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--info:#3b82f6;--text:#e2e8f0;--muted:#64748b;--radius:10px}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -169,6 +170,26 @@ select option{background:var(--surface2)}
 .workload-count{font-size:12px;font-weight:700;width:50px;text-align:right}
 .sim-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-top:20px}
 .sim-card h3{font-size:14px;font-weight:600;margin-bottom:4px}
+.import-drop{border:2px dashed var(--border);border-radius:10px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface2)}
+.import-drop:hover,.import-drop.drag{border-color:var(--accent);background:rgba(99,102,241,.06)}
+.import-drop .ico-big{font-size:36px;margin-bottom:8px}
+.catalogo-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:6px}
+.catalogo-item:hover{border-color:var(--accent);background:rgba(99,102,241,.07)}
+.catalogo-item.selected{border-color:var(--accent);background:rgba(99,102,241,.14)}
+.catalogo-num{font-size:11px;font-weight:700;color:var(--accent);width:30px;flex-shrink:0;text-align:center}
+.catalogo-nome{flex:1;font-size:13px;font-weight:500}
+.catalogo-unit{font-size:11px;color:var(--muted);width:90px;text-align:right}
+.catalogo-val{font-size:13px;font-weight:700;color:var(--success);width:80px;text-align:right;flex-shrink:0}
+.catalogo-search{position:relative;margin-bottom:12px}
+.catalogo-search input{padding-left:34px}
+.catalogo-search .ico-search{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted)}
+.catalogo-list{max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:8px}
+.catalogo-empty{padding:20px;text-align:center;color:var(--muted);font-size:12px}
+.ata-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(16,185,129,.1);color:var(--success);border-radius:6px;padding:3px 8px;font-size:11px;font-weight:600}
+.import-stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+.import-stat{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;flex:1;min-width:120px}
+.import-stat .num{font-size:22px;font-weight:700;color:var(--accent)}
+.import-stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
 .sim-card p{font-size:12px;color:var(--muted);margin-bottom:16px}
 .sim-result{background:var(--surface2);border-radius:8px;padding:14px;margin-top:14px}
 .sim-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid rgba(46,51,80,.3)}
@@ -295,7 +316,25 @@ select option{background:var(--surface2)}
       <div class="screen" id="screen-licitacoes">
         <div class="section-header">
           <h2>📜 Contratos Licitatórios</h2>
-          <button class="btn btn-primary btn-sm" onclick="openNovaLic()">＋ Nova Licitação</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('excel-upload').click()">📂 Importar Planilha da Ata</button>
+            <button class="btn btn-primary btn-sm" onclick="openNovaLic()">＋ Nova Licitação</button>
+          </div>
+        </div>
+        <input type="file" id="excel-upload" accept=".xlsx,.xls" style="display:none" onchange="handleExcelUpload(this)">
+        <div id="import-panel" style="display:none;margin-bottom:20px">
+          <div class="chart-card">
+            <h3 id="import-titulo">📋 Catálogo de Itens Importado</h3>
+            <div class="import-stats" id="import-stats"></div>
+            <div style="margin-top:14px">
+              <div class="catalogo-search">
+                <span class="ico-search">🔍</span>
+                <input type="text" id="catalogo-search-input" placeholder="Buscar item por nome, número ou categoria..." oninput="filtrarCatalogo()">
+              </div>
+              <div class="catalogo-list" id="catalogo-list-preview"></div>
+            </div>
+            <div style="margin-top:10px;font-size:11px;color:var(--muted)">💡 Estes itens ficam disponíveis ao criar uma Ordem de Compra — basta buscar pelo nome ou número do item.</div>
+          </div>
         </div>
         <div id="lic-container"></div>
         <!-- Simulador -->
@@ -410,18 +449,44 @@ select option{background:var(--surface2)}
 
 <!-- Nova OC -->
 <div class="modal-bg" id="modal-oc">
-  <div class="modal">
+  <div class="modal" style="max-width:700px">
     <div class="modal-header"><span class="modal-title">🛒 Nova Ordem de Compra</span><button class="modal-close" onclick="closeModal('modal-oc')">✕</button></div>
     <div class="modal-body">
       <div class="form-group"><label>OS Vinculada *</label><select id="oc-os-id"></select></div>
+      <!-- Busca do catalogo -->
+      <div style="margin-bottom:14px;border:1px solid rgba(99,102,241,.3);border-radius:10px;padding:14px;background:rgba(99,102,241,.04)">
+        <label style="margin-bottom:8px;display:block;font-size:12px;font-weight:600;color:var(--accent)">🔍 Buscar item da Ata</label>
+        <input type="text" id="oc-busca-item" placeholder="Digite numero ou nome... ex: 6, brigadista, recepcionista, projetor" oninput="buscarItemCatalogo()" autocomplete="off">
+        <div id="oc-sugestoes" style="display:none;border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:220px;overflow-y:auto;margin-top:6px;background:var(--surface)"></div>
+        <div id="oc-sem-catalogo" style="font-size:11px;color:var(--muted);margin-top:6px;display:none">📂 Nenhuma planilha importada. Va em Licitacoes > Importar Planilha da Ata.</div>
+        <!-- Card do item selecionado -->
+        <div id="oc-item-card" style="display:none;margin-top:12px;background:var(--surface);border:1px solid var(--success);border-radius:8px;padding:12px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <span id="oc-card-num" style="font-size:11px;font-weight:700;color:var(--accent);background:rgba(99,102,241,.12);padding:2px 8px;border-radius:6px">Item #0</span>
+                <span id="oc-card-unidade" style="font-size:11px;color:var(--muted);background:var(--surface2);padding:2px 8px;border-radius:6px">Diaria</span>
+              </div>
+              <div id="oc-card-nome" style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px"></div>
+              <div id="oc-card-det" style="font-size:11px;color:var(--muted);line-height:1.5;max-height:72px;overflow:hidden;position:relative"></div>
+              <button onclick="toggleDetalhamento()" id="oc-det-toggle" style="font-size:10px;color:var(--accent);background:none;border:none;cursor:pointer;padding:2px 0;margin-top:3px">Ver mais...</button>
+            </div>
+            <button onclick="limparItemSelecionado()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;flex-shrink:0">✕</button>
+          </div>
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)">
+            <span>Valor de Ata preenchido automaticamente.</span>
+            <span style="color:var(--success);font-weight:600" id="oc-card-ata"></span>
+          </div>
+        </div>
+      </div>
       <div class="form-row">
-        <div class="form-group"><label>Categoria *</label><select id="oc-cat"><option value="ALIMENTACAO">🍽️ Alimentação</option><option value="AUDIOVISUAL">🎙️ Audiovisual</option><option value="MOBILIARIO">🪑 Mobiliário</option><option value="RH">👥 RH / Equipe</option><option value="TRANSPORTE">🚛 Transporte</option><option value="FRETE">📦 Frete</option><option value="GASTOS_ADM">📑 Gastos Administrativos</option></select></div>
+        <div class="form-group"><label>Categoria *</label><select id="oc-cat"><option value="ALIMENTACAO">Alimentacao</option><option value="AUDIOVISUAL">Audiovisual</option><option value="MOBILIARIO">Mobiliario</option><option value="RH">RH / Equipe</option><option value="TRANSPORTE">Transporte</option><option value="FRETE">Frete</option><option value="GASTOS_ADM">Gastos Administrativos</option></select></div>
         <div class="form-group"><label>Fornecedor *</label><select id="oc-forn"></select></div>
       </div>
-      <div class="form-group"><label>Descrição do Serviço / Item *</label><textarea id="oc-desc" placeholder="Descreva o que está sendo contratado..."></textarea></div>
+      <div class="form-group"><label>Descricao do Servico / Item *</label><textarea id="oc-desc" placeholder="Descreva o que esta sendo contratado..."></textarea></div>
       <div class="form-row3">
         <div class="form-group"><label>Quantidade *</label><input id="oc-qtd" type="number" placeholder="1" min="1" step="1" value="1" oninput="calcOCTotal()"></div>
-        <div class="form-group"><label>Valor Unitário (R$) *</label><input id="oc-vunit" type="number" placeholder="0.00" step="0.01" oninput="calcOCTotal()"></div>
+        <div class="form-group"><label>Valor Unitario (R$) *</label><input id="oc-vunit" type="number" placeholder="0.00" step="0.01" oninput="calcOCTotal()"></div>
         <div class="form-group"><label>Total (calculado)</label><input id="oc-vtotal" type="text" placeholder="R$ 0,00" readonly style="color:var(--accent);font-weight:600"></div>
       </div>
       <div class="form-row">
@@ -538,6 +603,7 @@ const state={
     {id:5,razao:'TransLog Eventos',cnpj:'56.789.012/0001-34',categoria:'TRANSPORTE',contato:'Roberto Nunes',telefone:'(61) 95432-1098',email:'roberto@translog.com',itens:[{nome:'Van Executiva (diária)',custo:400},{nome:'Caminhão Baú (diária)',custo:800},{nome:'Transfer aeroporto',custo:150}]},
     {id:6,razao:'Light & Sound Pro',cnpj:'67.890.123/0001-45',categoria:'AUDIOVISUAL',contato:'Fernanda Tech',telefone:'(61) 94321-0987',email:'fernanda@lsp.com',itens:[{nome:'TV 75" (diária)',custo:550},{nome:'Painel LED (m²)',custo:750},{nome:'Transmissão ao vivo',custo:3500}]},
   ],
+  catalogo_itens:[], // itens importados do Excel da licitação
   licitacoes:[
     {id:1,ata:'ATA-2024-001',orgao:'Prefeitura Municipal de Brasília',objeto:'Serviços de organização de eventos e suporte logístico',inicio:'01/01/2024',fim:'31/12/2024',status:'ATIVO',itens:[
       {categoria:'ALIMENTACAO',fornecedor:'Buffet Sabor & Arte',valor_ata:6000,valor_item:4800},
@@ -1091,13 +1157,7 @@ function openOCDetail(id){
 }
 
 // ── Nova OC ──
-function openNovaOC(){
-  document.getElementById('oc-os-id').innerHTML=state.ordens.map(o=>`<option value="${o.id}">${o.numero} — ${o.titulo.substring(0,30)}</option>`).join('');
-  document.getElementById('oc-forn').innerHTML=state.fornecedores.map(f=>`<option value="${f.id}">${f.razao}</option>`).join('');
-  document.getElementById('oc-vtotal').value='';
-  document.getElementById('oc-lucro-prev').textContent='— % lucro';
-  openModal('modal-oc');
-}
+// openNovaOC movida para secao de catalogo abaixo
 
 function calcOCTotal(){
   const qtd=parseFloat(document.getElementById('oc-qtd').value)||1;
@@ -1253,6 +1313,272 @@ function showToast(msg,borderColor){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{renderDashboard();});
+
+// ══════════════════════════
+//  IMPORTAR PLANILHA EXCEL
+// ══════════════════════════
+
+// Mapeia palavras-chave do nome do item para categoria do sistema
+function inferirCategoria(nome){
+  const n=(nome||'').toLowerCase();
+  if(/recep|cred|mestre|ceri|coordena|copeira|brigadista|seguran|garcom|guia|interprete|libras|digita|eletri|fotografo|designer|revisa|tecnico|audiodescrip|socorrista|mobilidade|limpeza|carregador|cenograf|servicos gerais/i.test(n))return'RH';
+  if(/som|audio|projetor|tela|led|moving|refletor|microfone|pedestal|ilumina|televiso|totem|telepromp|spot|caixa de som|sonoriza|audiovisual|painel/i.test(n))return'AUDIOVISUAL';
+  if(/computador|notebook|impressora|rede|internet|estrutura de rede|tablet|servidor|impressao|ti |informatica/i.test(n))return'AUDIOVISUAL';
+  if(/cafe|almoco|jantar|buffet|agua|alimenta|snack|lanche|refeicao|coffee|bebida/i.test(n))return'ALIMENTACAO';
+  if(/mobi|cadeira|mesa|sofa|stand|tenda|divisoria|carpete|decoracao|flores|arranjo|toalha|linho/i.test(n))return'MOBILIARIO';
+  if(/transporte|transfer|onibus|van|carro|veiculo|taxi|uber|aeroporto/i.test(n))return'TRANSPORTE';
+  if(/frete|entrega|envio|logistics|carga/i.test(n))return'FRETE';
+  return'GASTOS_ADM';
+}
+
+function handleExcelUpload(input){
+  const file=input.files[0];
+  if(!file)return;
+  showToast('⏳ Lendo planilha...');
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=new Uint8Array(e.target.result);
+      const wb=XLSX.read(data,{type:'array'});
+      importarDoPlanilha(wb,file.name);
+    }catch(err){
+      showToast('❌ Erro ao ler o arquivo: '+err.message,'var(--danger)');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  input.value='';
+}
+
+function importarDoPlanilha(wb,nomeArquivo){
+  const itens=[];
+  const secoes={};
+
+  wb.SheetNames.forEach(sheetName=>{
+    const ws=wb.Sheets[sheetName];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    let secaoAtual='GERAL';
+
+    rows.forEach(row=>{
+      // Detecta linha de seção (ex: "SEÇÃO I – SERVIÇOS ESPECIALIZADOS")
+      const primCel=String(row[0]||'').trim()+String(row[1]||'').trim()+String(row[2]||'').trim();
+      if(/SEÇÃO|GRUPO|LOTE/i.test(primCel)&&!Number.isFinite(parseFloat(row[1]))){
+        const match=primCel.match(/SEÇÃO\s+([IVXLCDM]+)|GRUPO\s+([IVX]+)/i);
+        if(match)secaoAtual=primCel.substring(0,50).trim();
+        return;
+      }
+
+      // Linha de item válida: col B (índice 1) deve ser número inteiro
+      const numItem=row[1];
+      const nome=String(row[2]||'').trim();
+      const detalhamento=String(row[3]||'').trim();
+      const unidade=String(row[4]||'').trim()||String(row[5]||'').trim();
+
+      // Valor unitário: col G (índice 6)
+      let vUnit=0;
+      const rawVal=row[6];
+      if(rawVal!==''&&rawVal!==undefined){
+        const parsed=parseFloat(String(rawVal).replace(',','.'));
+        if(!isNaN(parsed))vUnit=parsed;
+      }
+
+      if(Number.isFinite(parseFloat(numItem))&&nome&&nome.length>3&&nome.length<200&&!nome.toUpperCase().includes('TIPO DE SERV')){
+        const lote=sheetName.trim();
+        const cat=inferirCategoria(nome);
+        itens.push({
+          num:parseInt(numItem),
+          nome,
+          detalhamento:detalhamento.substring(0,300),
+          unidade,
+          valor_unit:vUnit,
+          categoria:cat,
+          lote,
+          secao:secaoAtual
+        });
+        secoes[secaoAtual]=(secoes[secaoAtual]||0)+1;
+      }
+    });
+  });
+
+  if(itens.length===0){showToast('⚠️ Nenhum item encontrado. Verifique o formato da planilha.','var(--warning)');return;}
+
+  state.catalogo_itens=itens;
+  renderCatalogo(nomeArquivo,secoes);
+  showToast(`✅ ${itens.length} itens importados da planilha!`);
+}
+
+function renderCatalogo(nomeArquivo,secoes){
+  const panel=document.getElementById('import-panel');
+  panel.style.display='block';
+
+  const titulo=document.getElementById('import-titulo');
+  if(titulo)titulo.textContent='📋 Catálogo: '+nomeArquivo;
+
+  // Estatísticas
+  const cats={};
+  state.catalogo_itens.forEach(it=>{cats[it.lote]=(cats[it.lote]||0)+1;});
+  const statsEl=document.getElementById('import-stats');
+  if(statsEl){
+    const lotes=Object.entries(cats);
+    statsEl.innerHTML=`
+      <div class="import-stat"><div class="num">${state.catalogo_itens.length}</div><div class="lbl">Total de itens</div></div>
+      ${lotes.map(([l,c])=>`<div class="import-stat"><div class="num">${c}</div><div class="lbl">${l.substring(0,22)}</div></div>`).join('')}
+      <div class="import-stat"><div class="num">${Object.keys(secoes).length}</div><div class="lbl">Seções / Grupos</div></div>`;
+  }
+
+  // Preview dos primeiros itens
+  filtrarCatalogo('');
+}
+
+function filtrarCatalogo(q){
+  const query=q!==undefined?q:(document.getElementById('catalogo-search-input')?.value||'');
+  const listEl=document.getElementById('catalogo-list-preview');
+  if(!listEl)return;
+
+  const filtered=query.trim()===''
+    ?state.catalogo_itens.slice(0,50)
+    :state.catalogo_itens.filter(it=>{
+        const t=query.toLowerCase();
+        return String(it.num).includes(t)||it.nome.toLowerCase().includes(t)||it.unidade.toLowerCase().includes(t);
+      }).slice(0,80);
+
+  if(filtered.length===0){
+    listEl.innerHTML='<div class="catalogo-empty">Nenhum item encontrado</div>';
+    return;
+  }
+
+  listEl.innerHTML=filtered.map(it=>`
+    <div class="catalogo-item" onclick="void(0)">
+      <div class="catalogo-num">${it.num}</div>
+      <div style="flex:1">
+        <div class="catalogo-nome">${it.nome}</div>
+        <div style="font-size:10px;color:var(--muted)">${it.unidade} · <span class="cat-pill cat-${it.categoria}" style="margin:0;padding:1px 6px;font-size:9px">${it.categoria}</span></div>
+      </div>
+      <div class="catalogo-val">${it.valor_unit>0?brMoney(it.valor_unit):'—'}</div>
+    </div>`).join('');
+
+  if(state.catalogo_itens.length>50&&query.trim()===''){
+    listEl.innerHTML+=`<div class="catalogo-empty">... e mais ${state.catalogo_itens.length-50} itens. Use a busca para filtrar.</div>`;
+  }
+}
+
+// ══════════════════════════
+//  BUSCA NO MODAL DE OC
+// ══════════════════════════
+
+function openNovaOC(){
+  document.getElementById('oc-os-id').innerHTML=state.ordens.map(o=>`<option value="${o.id}">${o.numero} — ${o.titulo.substring(0,30)}</option>`).join('');
+  document.getElementById('oc-forn').innerHTML=state.fornecedores.map(f=>`<option value="${f.id}">${f.razao}</option>`).join('');
+  // Limpa campos
+  ['oc-vtotal','oc-vunit','oc-valor-ata','oc-desc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('oc-qtd').value='1';
+  document.getElementById('oc-lucro-prev').textContent='— % lucro';
+  document.getElementById('oc-busca-item').value='';
+  document.getElementById('oc-sugestoes').style.display='none';
+  document.getElementById('oc-item-card').style.display='none';
+  _itemSelecionado=null;_detExpanded=false;
+
+  // Avisa se nao tem catalogo
+  const semCat=document.getElementById('oc-sem-catalogo');
+  if(semCat)semCat.style.display=state.catalogo_itens.length===0?'block':'none';
+
+  openModal('modal-oc');
+}
+
+function buscarItemCatalogo(){
+  const q=document.getElementById('oc-busca-item').value.trim();
+  const sugEl=document.getElementById('oc-sugestoes');
+
+  if(!q||state.catalogo_itens.length===0){sugEl.style.display='none';return;}
+
+  const t=q.toLowerCase();
+  const results=state.catalogo_itens.filter(it=>
+    String(it.num)===q||
+    it.nome.toLowerCase().includes(t)||
+    it.unidade.toLowerCase().includes(t)
+  ).slice(0,12);
+
+  if(results.length===0){
+    sugEl.style.display='block';
+    sugEl.innerHTML='<div style="padding:12px;font-size:12px;color:var(--muted);text-align:center">Nenhum item encontrado</div>';
+    return;
+  }
+
+  sugEl.style.display='block';
+  sugEl.innerHTML=results.map(it=>`
+    <div onclick="selecionarItemCatalogo(${it.num})" style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(46,51,80,.4);transition:background .1s" onmouseover="this.style.background='rgba(99,102,241,.1)'" onmouseout="this.style.background=''">
+      <span style="font-size:12px;font-weight:700;color:var(--accent);background:rgba(99,102,241,.12);padding:2px 7px;border-radius:5px;flex-shrink:0;margin-top:1px">${it.num}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.nome}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${it.unidade} &nbsp;·&nbsp; <span style="color:var(--muted)">${it.categoria}</span></div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--success);flex-shrink:0;text-align:right">
+        ${it.valor_unit>0?brMoney(it.valor_unit):'—'}<br>
+        <span style="font-size:9px;font-weight:400;color:var(--muted)">${it.unidade.substring(0,12)}</span>
+      </div>
+    </div>`).join('');
+}
+
+let _detExpanded=false;
+let _itemSelecionado=null;
+
+function selecionarItemCatalogo(numItem){
+  const item=state.catalogo_itens.find(it=>it.num===numItem);
+  if(!item)return;
+  _itemSelecionado=item;
+  _detExpanded=false;
+
+  // Preenche campos do formulário
+  document.getElementById('oc-desc').value=item.nome;
+  document.getElementById('oc-cat').value=item.categoria;
+
+  // Valor de Ata = valor da planilha (referência)
+  if(item.valor_unit>0){
+    document.getElementById('oc-valor-ata').value=item.valor_unit.toFixed(2);
+    calcOCLucroPrev();
+  }
+
+  // Exibe card de detalhe do item
+  document.getElementById('oc-card-num').textContent='Item #'+item.num;
+  document.getElementById('oc-card-nome').textContent=item.nome;
+  document.getElementById('oc-card-unidade').textContent=item.unidade||'—';
+  document.getElementById('oc-card-ata').textContent=item.valor_unit>0?brMoney(item.valor_unit)+' / '+item.unidade:'—';
+
+  const detEl=document.getElementById('oc-card-det');
+  detEl.textContent=item.detalhamento||'Sem detalhamento disponível.';
+  detEl.style.maxHeight='72px';
+  detEl.style.overflow='hidden';
+  document.getElementById('oc-det-toggle').style.display=item.detalhamento&&item.detalhamento.length>120?'block':'none';
+  document.getElementById('oc-item-card').style.display='block';
+
+  // Esconde sugestões e limpa busca
+  document.getElementById('oc-sugestoes').style.display='none';
+  document.getElementById('oc-busca-item').value='';
+}
+
+function toggleDetalhamento(){
+  const detEl=document.getElementById('oc-card-det');
+  const btn=document.getElementById('oc-det-toggle');
+  _detExpanded=!_detExpanded;
+  detEl.style.maxHeight=_detExpanded?'none':'72px';
+  detEl.style.overflow=_detExpanded?'visible':'hidden';
+  btn.textContent=_detExpanded?'Ver menos...':'Ver mais...';
+}
+
+function limparItemSelecionado(){
+  _itemSelecionado=null;
+  document.getElementById('oc-item-card').style.display='none';
+  document.getElementById('oc-busca-item').value='';
+  document.getElementById('oc-sugestoes').style.display='none';
+}
+
+// Fecha sugestões ao clicar fora
+document.addEventListener('click',e=>{
+  const busca=document.getElementById('oc-busca-item');
+  const sug=document.getElementById('oc-sugestoes');
+  if(sug&&busca&&!busca.contains(e.target)&&!sug.contains(e.target)){
+    sug.style.display='none';
+  }
+});
 </script>
 </body>
 </html>
